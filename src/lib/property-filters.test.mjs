@@ -155,3 +155,52 @@ test("does not mutate properties during lookup", () => {
     originalIds,
   );
 });
+
+test("ignores a zero maximum budget", () => {
+  assert.deepEqual(
+    filterProperties(mockProperties, {
+      ...allFilters,
+      maxBudget: 0,
+    }),
+    mockProperties,
+  );
+});
+
+test("ignores a negative maximum budget", () => {
+  assert.deepEqual(
+    filterProperties(mockProperties, {
+      ...allFilters,
+      maxBudget: -1000,
+    }),
+    mockProperties,
+  );
+});
+
+test("ignores a non-finite maximum budget", () => {
+  for (const maxBudget of [
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+  ]) {
+    assert.deepEqual(
+      filterProperties(mockProperties, {
+        ...allFilters,
+        maxBudget,
+      }),
+      mockProperties,
+    );
+  }
+});
+
+test("still applies other filters when the budget is invalid", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "rent",
+    maxBudget: Number.NaN,
+  });
+
+  assert.equal(results.length, 3);
+  assert.ok(
+    results.every((property) => property.listingType === "rent"),
+  );
+});
