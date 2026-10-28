@@ -1,3 +1,4 @@
+import SiteHeader from "@/components/site-header";
 const properties = [
   {
     type: "FOR SALE",
@@ -58,29 +59,7 @@ const audiences = [
 export default function Home() {
   return (
     <main>
-      <header className="site-header">
-        <div className="container nav-shell">
-          <a className="brand" href="#home" aria-label="CASAORA home">
-            <span className="brand-mark" aria-hidden="true">
-              C
-            </span>
-            <span className="brand-copy">
-              <span className="brand-name">CASAORA</span>
-              <span className="brand-caption">PROPERTY. PEOPLE. POSSIBILITIES.</span>
-            </span>
-          </a>
-
-          <nav className="main-nav" aria-label="Main navigation">
-            <a href="#discover">Explore homes</a>
-            <a href="#broker">For brokers</a>
-            <a href="#how-it-works">How it works</a>
-          </nav>
-
-          <a className="button button-dark nav-cta" href="#get-started">
-            Get started <span aria-hidden="true">↗</span>
-          </a>
-        </div>
-      </header>
+      <SiteHeader />
 
       <section className="hero" id="home">
         <div className="container hero-grid">
