@@ -301,3 +301,36 @@ test("ignores a budget supplied with the wrong runtime type", () => {
   assert.equal(results.length, 3);
   assert.ok(results.every((property) => property.listingType === "rent"));
 });
+
+test("ignores a locality that is not in the property dataset", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    locality: "Unknown locality",
+  });
+
+  assert.deepEqual(results, mockProperties);
+});
+
+test("ignores unsupported BHK filter values", () => {
+  for (const bhk of [0, 5, -1, 2.5, Number.NaN, "2"]) {
+    const results = filterProperties(mockProperties, {
+      ...allFilters,
+      bhk,
+    });
+
+    assert.deepEqual(results, mockProperties);
+  }
+});
+
+test("still applies valid filters when locality is unsupported", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "rent",
+    locality: "Unknown locality",
+  });
+
+  assert.equal(results.length, 3);
+  assert.ok(
+    results.every((property) => property.listingType === "rent"),
+  );
+});

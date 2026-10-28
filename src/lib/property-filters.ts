@@ -10,6 +10,17 @@ export function filterProperties(
   const maxBudget = filters.maxBudget;
   const pinCode = filters.pinCode.trim();
   const hasValidPinCode = /^\d{6}$/.test(pinCode);
+  const validLocalities = new Set(getPropertyLocalities(properties));
+  const hasValidLocality =
+    filters.locality === "all" ||
+    (typeof filters.locality === "string" &&
+      validLocalities.has(filters.locality));
+  const hasValidBhk =
+    filters.bhk === "all" ||
+    (typeof filters.bhk === "number" &&
+      Number.isInteger(filters.bhk) &&
+      filters.bhk >= 1 &&
+      filters.bhk <= 4);
 
   const hasValidBudget =
     maxBudget !== null &&
@@ -25,6 +36,7 @@ export function filterProperties(
     }
 
     if (
+      hasValidLocality &&
       filters.locality !== "all" &&
       property.locality !== filters.locality
     ) {
@@ -39,6 +51,7 @@ export function filterProperties(
     }
 
     if (
+      hasValidBhk &&
       filters.bhk !== "all" &&
       property.bhk !== filters.bhk
     ) {

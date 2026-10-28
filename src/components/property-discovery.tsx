@@ -21,6 +21,7 @@ const initialFilters: PropertyFilters = {
 };
 
 const localities = getPropertyLocalities(mockProperties);
+const supportedBhkOptions = [1, 2, 3, 4] as const;
 
 export default function PropertyDiscovery() {
   const [filters, setFilters] =
@@ -109,12 +110,16 @@ export default function PropertyDiscovery() {
           <select
             id="property-locality"
             value={filters.locality}
-            onChange={(event) =>
-              setFilters((current) => ({
-                ...current,
-                locality: event.target.value,
-              }))
-            }
+            onChange={(event) => {
+              const value = event.target.value;
+
+              if (value === "all" || localities.includes(value)) {
+                setFilters((current) => ({
+                  ...current,
+                  locality: value,
+                }));
+              }
+            }}
           >
             <option value="all">All localities</option>
             {localities.map((locality) => (
@@ -162,12 +167,24 @@ export default function PropertyDiscovery() {
             id="property-bhk"
             value={filters.bhk}
             onChange={(event) => {
-              const value = event.target.value;
+              const rawValue = event.target.value;
 
-              setFilters((current) => ({
-                ...current,
-                bhk: value === "all" ? "all" : Number(value),
-              }));
+              if (rawValue === "all") {
+                setFilters((current) => ({
+                  ...current,
+                  bhk: "all",
+                }));
+                return;
+              }
+
+              const value = Number(rawValue);
+
+              if (supportedBhkOptions.includes(value as 1 | 2 | 3 | 4)) {
+                setFilters((current) => ({
+                  ...current,
+                  bhk: value,
+                }));
+              }
             }}
           >
             <option value="all">Any BHK</option>
