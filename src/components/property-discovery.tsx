@@ -31,9 +31,25 @@ export default function PropertyDiscovery() {
     [filters],
   );
 
+  const activeFilterCount = [
+    filters.listingType !== "all",
+    filters.locality !== "all",
+    filters.bhk !== "all",
+    filters.maxBudget !== null,
+  ].filter(Boolean).length;
+
+  const hasActiveFilters = activeFilterCount > 0;
+
   function resetFilters() {
-    setFilters(initialFilters);
+    setFilters({ ...initialFilters });
   }
+
+  const budgetHint =
+    filters.listingType === "sale"
+      ? "Compared with the total purchase price."
+      : filters.listingType === "rent"
+        ? "Compared with the monthly rent."
+        : "Compared separately with sale prices and monthly rents.";
 
   return (
     <div className="discovery">
@@ -57,6 +73,7 @@ export default function PropertyDiscovery() {
             value={filters.listingType}
             onChange={(event) => {
               const value = event.target.value;
+
               if (
                 value === "all" ||
                 value === "sale" ||
@@ -105,6 +122,7 @@ export default function PropertyDiscovery() {
             value={filters.bhk}
             onChange={(event) => {
               const value = event.target.value;
+
               setFilters((current) => ({
                 ...current,
                 bhk: value === "all" ? "all" : Number(value),
@@ -129,7 +147,9 @@ export default function PropertyDiscovery() {
             min="1"
             step="1000"
             inputMode="numeric"
+            autoComplete="off"
             placeholder="No limit"
+            aria-describedby="property-budget-hint"
             value={filters.maxBudget ?? ""}
             onChange={(event) => {
               const rawValue = event.target.value;
@@ -146,26 +166,37 @@ export default function PropertyDiscovery() {
               }));
             }}
           />
-          <span className="filter-hint">
-            Rent is monthly; sale is total price.
+          <span
+            className="filter-hint"
+            id="property-budget-hint"
+          >
+            {budgetHint}
           </span>
         </div>
 
-        <button
-          className="button button-dark filter-reset"
-          type="button"
-          onClick={resetFilters}
-        >
-          Reset filters
-        </button>
+        <div className="filter-actions">
+          <button
+            className="button button-dark filter-reset"
+            type="button"
+            onClick={resetFilters}
+            disabled={!hasActiveFilters}
+          >
+            {hasActiveFilters ? "Reset filters" : "No filters applied"}
+          </button>
+
+          <p className="active-filter-count">
+            {activeFilterCount === 0
+              ? "Showing all sample listings"
+              : `${activeFilterCount} ${
+                  activeFilterCount === 1 ? "filter" : "filters"
+                } applied`}
+          </p>
+        </div>
       </form>
 
-      <div
-        className="discovery-results-heading"
-        aria-live="polite"
-      >
+      <div className="discovery-results-heading">
         <h3>Properties to explore</h3>
-        <p>
+        <p role="status" aria-live="polite" aria-atomic="true">
           {filteredProperties.length}{" "}
           {filteredProperties.length === 1
             ? "sample listing"
@@ -187,7 +218,8 @@ export default function PropertyDiscovery() {
         <div className="discovery-empty" role="status">
           <h3>No sample properties match those filters</h3>
           <p>
-            Try another locality, bedroom count, or budget.
+            Try increasing your budget, choosing another locality,
+            or selecting a different bedroom count.
           </p>
           <button
             className="button button-light"

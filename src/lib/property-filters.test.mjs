@@ -105,3 +105,25 @@ test("does not mutate the original dataset", () => {
     originalIds,
   );
 });
+
+import {
+  formatPropertyPrice,
+  getPropertyPriceContext,
+} from "./property-display.ts";
+
+test("formats prices using Indian rupee grouping", () => {
+  assert.equal(formatPropertyPrice(9200000), "₹92,00,000");
+  assert.equal(formatPropertyPrice(24000), "₹24,000");
+});
+
+test("distinguishes purchase price from monthly rent", () => {
+  assert.equal(
+    getPropertyPriceContext("sale"),
+    "Total purchase price",
+  );
+
+  assert.equal(
+    getPropertyPriceContext("rent"),
+    "Monthly rent",
+  );
+});

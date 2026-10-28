@@ -1,25 +1,26 @@
 import type { Property } from "@/types/property";
+import {
+  formatPropertyPrice,
+  getPropertyPriceContext,
+} from "@/lib/property-display";
 
 interface PropertyCardProps {
   property: Property;
 }
 
-const indianRupee = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
-
 export default function PropertyCard({
   property,
 }: PropertyCardProps) {
-  const price = indianRupee.format(property.priceInRupees);
-  const priceSuffix =
-    property.listingType === "rent" ? " / month" : "";
+  const price = formatPropertyPrice(property.priceInRupees);
+  const priceContext = getPropertyPriceContext(property.listingType);
 
   return (
     <article className="property-card">
-      <div className={`property-art ${property.artClass}`}>
+      <div
+        className={`property-art ${property.artClass}`}
+        role="img"
+        aria-label={`Decorative fictional property illustration for ${property.locality}, Kolkata`}
+      >
         <span className="property-type">
           {property.listingType === "sale"
             ? "FOR SALE"
@@ -53,11 +54,16 @@ export default function PropertyCard({
         </p>
 
         <div className="property-card-footer">
-          <strong>
-            {price}
-            {priceSuffix}
-          </strong>
-          <span aria-hidden="true">↗</span>
+          <div className="property-price">
+            <strong>{price}</strong>
+            <span className="property-price-context">
+              {priceContext}
+              {property.listingType === "rent" ? " · per month" : ""}
+            </span>
+          </div>
+          <span className="property-card-mark" aria-hidden="true">
+            ↗
+          </span>
         </div>
       </div>
     </article>
