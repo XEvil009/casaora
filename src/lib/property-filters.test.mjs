@@ -334,3 +334,25 @@ test("still applies valid filters when locality is unsupported", () => {
     results.every((property) => property.listingType === "rent"),
   );
 });
+
+test("ignores unsupported listing-type filter values", () => {
+  for (const listingType of ["lease", "SALE", "", null]) {
+    const results = filterProperties(mockProperties, {
+      ...allFilters,
+      listingType,
+    });
+
+    assert.deepEqual(results, mockProperties);
+  }
+});
+
+test("still applies valid filters when listing type is unsupported", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "lease",
+    locality: "New Town",
+  });
+
+  assert.equal(results.length, 2);
+  assert.ok(results.every((property) => property.locality === "New Town"));
+});

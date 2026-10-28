@@ -10,6 +10,10 @@ export function filterProperties(
   const maxBudget = filters.maxBudget;
   const pinCode = filters.pinCode.trim();
   const hasValidPinCode = /^\d{6}$/.test(pinCode);
+  const hasValidListingType =
+    filters.listingType === "all" ||
+    filters.listingType === "sale" ||
+    filters.listingType === "rent";
   const validLocalities = new Set(getPropertyLocalities(properties));
   const hasValidLocality =
     filters.locality === "all" ||
@@ -29,6 +33,7 @@ export function filterProperties(
 
   return properties.filter((property) => {
     if (
+      hasValidListingType &&
       filters.listingType !== "all" &&
       property.listingType !== filters.listingType
     ) {
