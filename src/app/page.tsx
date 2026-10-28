@@ -1,69 +1,328 @@
-import Image from "next/image";
+const properties = [
+  {
+    type: "FOR SALE",
+    name: "A considered family home",
+    location: "New Town, Action Area I",
+    details: "3 BHK  ·  1,420 sq. ft.",
+    price: "₹ 92 lakh",
+    initials: "NT",
+    style: "property-art-newtown",
+  },
+  {
+    type: "FOR RENT",
+    name: "A bright city apartment",
+    location: "Salt Lake, Sector V",
+    details: "2 BHK  ·  980 sq. ft.",
+    price: "₹ 24,000 / month",
+    initials: "SL",
+    style: "property-art-saltlake",
+  },
+  {
+    type: "FOR SALE",
+    name: "Room to grow together",
+    location: "Rajarhat, Kolkata",
+    details: "3 BHK  ·  1,560 sq. ft.",
+    price: "₹ 78 lakh",
+    initials: "RH",
+    style: "property-art-rajarhat",
+  },
+];
+
+const audiences = [
+  {
+    number: "01",
+    title: "For brokers",
+    description:
+      "Build your professional network, collaborate on shared properties, and connect customer requirements with suitable listings.",
+    link: "#broker",
+    action: "Explore broker network",
+  },
+  {
+    number: "02",
+    title: "For buyers & renters",
+    description:
+      "Discover homes across Kolkata and connect with property professionals who understand what you need.",
+    link: "#discover",
+    action: "Explore properties",
+  },
+  {
+    number: "03",
+    title: "For administrators",
+    description:
+      "The planned operations workspace will support platform oversight, reviews, and auditable workflows.",
+    link: "#administrator",
+    action: "Admin workspace — coming soon",
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main>
+      <header className="site-header">
+        <div className="container nav-shell">
+          <a className="brand" href="#home" aria-label="CASAORA home">
+            <span className="brand-mark" aria-hidden="true">
+              C
+            </span>
+            <span className="brand-copy">
+              <span className="brand-name">CASAORA</span>
+              <span className="brand-caption">PROPERTY. PEOPLE. POSSIBILITIES.</span>
+            </span>
+          </a>
+
+          <nav className="main-nav" aria-label="Main navigation">
+            <a href="#discover">Explore homes</a>
+            <a href="#broker">For brokers</a>
+            <a href="#how-it-works">How it works</a>
+          </nav>
+
+          <a className="button button-dark nav-cta" href="#get-started">
+            Get started <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </header>
+
+      <section className="hero" id="home">
+        <div className="container hero-grid">
+          <div className="hero-copy">
+            <div className="eyebrow">
+              <span className="status-dot" />
+              A NEW WAY TO WORK IN REAL ESTATE
+            </div>
+
+            <h1>
+              Property is local.
+              <br />
+              <span>Opportunity</span>
+              <br />
+              is shared.
+            </h1>
+
+            <p className="hero-description">
+              One Property. One Network. Every Opportunity.
+            </p>
+
+            <p className="hero-support">
+              Discover homes, connect with trusted property professionals, and
+              build better opportunities across Kolkata — together.
+            </p>
+
+            <div className="hero-actions">
+              <a className="button button-dark" href="#discover">
+                Discover properties <span aria-hidden="true">↗</span>
+              </a>
+              <a className="button button-light" href="#broker">
+                Join the broker network
+              </a>
+            </div>
+
+            <div className="hero-note">
+              <span className="note-symbol" aria-hidden="true">+</span>
+              <span>Designed for a more connected real-estate community.</span>
+            </div>
+          </div>
+
+          <div className="hero-visual" aria-label="Illustration of a modern home">
+            <div className="visual-topline">
+              <span>KOLKATA, WEST BENGAL</span>
+              <span>22.57° N / 88.36° E</span>
+            </div>
+
+            <div className="architecture-scene" aria-hidden="true">
+              <div className="sun-disc" />
+              <div className="scene-hill scene-hill-back" />
+              <div className="scene-hill scene-hill-front" />
+              <div className="building building-back">
+                <span className="building-window" />
+                <span className="building-window" />
+                <span className="building-window" />
+                <span className="building-window" />
+              </div>
+              <div className="building building-main">
+                <div className="building-roof" />
+                <div className="building-facade">
+                  <div className="facade-window" />
+                  <div className="facade-window" />
+                  <div className="facade-window" />
+                  <div className="facade-window" />
+                  <div className="facade-door" />
+                </div>
+              </div>
+              <div className="plant plant-left"><span /></div>
+              <div className="plant plant-right"><span /></div>
+            </div>
+
+            <div className="visual-bottomline">
+              <div>
+                <span className="visual-label">MORE THAN A LISTING</span>
+                <strong>A network built around people.</strong>
+              </div>
+              <span className="visual-index">01 / 03</span>
+            </div>
+
+            <div className="floating-note">
+              <span className="floating-icon" aria-hidden="true">↗</span>
+              <span>
+                <strong>Better together</strong>
+                <small>One connected community</small>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="container hero-footer">
+          <span>MADE FOR KOLKATA</span>
+          <span>HOMES · PEOPLE · COLLABORATION</span>
+          <a href="#discover">Scroll to explore <span aria-hidden="true">↓</span></a>
+        </div>
+      </section>
+
+      <section className="principles-section" id="how-it-works">
+        <div className="container principles-grid">
+          <div className="section-intro">
+            <span className="eyebrow">THE CASAORA APPROACH</span>
+            <h2>A better property journey starts with a better connection.</h2>
+          </div>
+
+          <article className="principle">
+            <span className="principle-number">01 / DISCOVER</span>
+            <h3>Find the right fit</h3>
+            <p>Explore property opportunities by location, budget, and needs.</p>
+          </article>
+
+          <article className="principle">
+            <span className="principle-number">02 / CONNECT</span>
+            <h3>Work as a network</h3>
+            <p>Bring brokers and suitable opportunities closer together.</p>
+          </article>
+
+          <article className="principle">
+            <span className="principle-number">03 / MOVE FORWARD</span>
+            <h3>Build with clarity</h3>
+            <p>Create a foundation for more transparent, organised workflows.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="discover-section" id="discover">
+        <div className="container">
+          <div className="section-heading-row">
+            <div className="section-intro">
+              <span className="eyebrow">A TASTE OF KOLKATA</span>
+              <h2>Every home has a story.</h2>
+              <p>
+                Start exploring the kinds of opportunities CASAORA is being
+                designed to bring together.
+              </p>
+            </div>
+            <span className="sample-label">ILLUSTRATIVE SAMPLE LISTINGS</span>
+          </div>
+
+          <div className="property-grid">
+            {properties.map((property) => (
+              <article className="property-card" key={property.initials}>
+                <div className={`property-art ${property.style}`}>
+                  <span className="property-type">{property.type}</span>
+                  <span className="property-monogram">{property.initials}</span>
+                  <span className="art-caption">KOLKATA / RESIDENTIAL</span>
+                </div>
+                <div className="property-content">
+                  <span className="property-location">
+                    <span aria-hidden="true">⌖</span> {property.location}
+                  </span>
+                  <h3>{property.name}</h3>
+                  <p className="property-details">{property.details}</p>
+                  <div className="property-card-footer">
+                    <strong>{property.price}</strong>
+                    <span aria-hidden="true">↗</span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <p className="sample-disclaimer">
+            These are fictional examples for the Day 2 interface preview, not
+            verified properties or live offers. Property search and listing
+            data will be connected in a later development stage.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
+      </section>
+
+      <section className="audience-section" id="get-started">
+        <div className="container">
+          <div className="section-intro audience-heading">
+            <span className="eyebrow">YOUR PLACE IN THE NETWORK</span>
+            <h2>One platform. Different journeys.</h2>
+            <p>Start with the experience that fits your role.</p>
+          </div>
+
+          <div className="audience-grid">
+            {audiences.map((audience) => (
+              <article
+                className="audience-card"
+                id={
+                  audience.number === "01"
+                    ? "broker"
+                    : audience.number === "03"
+                      ? "administrator"
+                      : undefined
+                }
+                key={audience.number}
+              >
+                <span className="audience-number">{audience.number}</span>
+                <h3>{audience.title}</h3>
+                <p>{audience.description}</p>
+                <a href={audience.link} className="text-link">
+                  {audience.action} <span aria-hidden="true">↗</span>
+                </a>
+              </article>
+            ))}
+          </div>
+          <p className="future-note">
+            Account registration, login, role permissions, and live property
+            services have not been implemented yet.
+          </p>
+        </div>
+      </section>
+
+      <section className="closing-section">
+        <div className="container closing-content">
+          <span className="eyebrow">THE FUTURE OF LOCAL REAL ESTATE</span>
+          <h2>
+            Good connections
+            <br />
+            make <span>great opportunities.</span>
+          </h2>
+          <p>
+            CASAORA is being built for the people who make the property
+            market work.
+          </p>
+          <a className="button button-gold" href="#get-started">
+            Explore the CASAORA vision <span aria-hidden="true">↗</span>
           </a>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <footer className="site-footer">
+        <div className="container footer-main">
+          <a className="brand footer-brand" href="#home">
+            <span className="brand-mark" aria-hidden="true">C</span>
+            <span className="brand-copy">
+              <span className="brand-name">CASAORA</span>
+              <span className="brand-caption">PROPERTY. PEOPLE. POSSIBILITIES.</span>
+            </span>
+          </a>
+          <p>One Property. One Network. Every Opportunity.</p>
+          <a href="#home" className="back-to-top">
+            Back to top ↑
+          </a>
+        </div>
+        <div className="container footer-legal">
+          <span>© 2026 CASAORA · KOLKATA, INDIA</span>
+          <span>A property network in development.</span>
+        </div>
+      </footer>
+    </main>
   );
 }
