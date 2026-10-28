@@ -127,3 +127,31 @@ test("distinguishes purchase price from monthly rent", () => {
     "Monthly rent",
   );
 });
+
+import { getPropertyById } from "./property-lookup.ts";
+
+test("looks up a property by its stable ID", () => {
+  const property = getPropertyById(mockProperties, "mock-001");
+
+  assert.ok(property);
+  assert.equal(property.id, "mock-001");
+  assert.equal(property.locality, "New Town");
+});
+
+test("returns undefined for an unknown property ID", () => {
+  assert.equal(
+    getPropertyById(mockProperties, "does-not-exist"),
+    undefined,
+  );
+});
+
+test("does not mutate properties during lookup", () => {
+  const originalIds = mockProperties.map((property) => property.id);
+
+  getPropertyById(mockProperties, "mock-003");
+
+  assert.deepEqual(
+    mockProperties.map((property) => property.id),
+    originalIds,
+  );
+});

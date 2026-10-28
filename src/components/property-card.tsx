@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Property } from "@/types/property";
 import {
   formatPropertyPrice,
@@ -13,18 +14,20 @@ export default function PropertyCard({
 }: PropertyCardProps) {
   const price = formatPropertyPrice(property.priceInRupees);
   const priceContext = getPropertyPriceContext(property.listingType);
+  const detailHref = `/properties/${property.id}`;
 
   return (
     <article className="property-card">
       <div
         className={`property-art ${property.artClass}`}
         role="img"
-        aria-label={`Decorative fictional property illustration for ${property.locality}, Kolkata`}
+        aria-label={
+          `Decorative fictional property illustration for ` +
+          `${property.locality}, Kolkata`
+        }
       >
         <span className="property-type">
-          {property.listingType === "sale"
-            ? "FOR SALE"
-            : "FOR RENT"}
+          {property.listingType === "sale" ? "FOR SALE" : "FOR RENT"}
         </span>
 
         <span className="property-monogram" aria-hidden="true">
@@ -61,10 +64,19 @@ export default function PropertyCard({
               {property.listingType === "rent" ? " · per month" : ""}
             </span>
           </div>
-          <span className="property-card-mark" aria-hidden="true">
-            ↗
-          </span>
+
+          <Link
+            className="property-card-mark"
+            href={detailHref}
+            aria-label={`View details for ${property.title}`}
+          >
+            <span aria-hidden="true">↗</span>
+          </Link>
         </div>
+
+        <Link className="property-detail-link" href={detailHref}>
+          View property details
+        </Link>
       </div>
     </article>
   );
