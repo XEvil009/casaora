@@ -1691,3 +1691,8 @@ a {
     margin: 20px 0;
   }
 }
+
+/* Day 11: visibly identify invalid property budget input. */
+.filter-hint-error {
+  color: #b42318;
+}

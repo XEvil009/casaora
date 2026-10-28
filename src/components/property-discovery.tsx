@@ -25,6 +25,11 @@ const localities = getPropertyLocalities(mockProperties);
 export default function PropertyDiscovery() {
   const [filters, setFilters] =
     useState<PropertyFilters>(initialFilters);
+  const [budgetInput, setBudgetInput] = useState("");
+  const parsedBudget = Number(budgetInput);
+  const budgetError =
+    budgetInput !== "" &&
+    (!Number.isFinite(parsedBudget) || parsedBudget <= 0);
 
   const filteredProperties = useMemo(
     () => filterProperties(mockProperties, filters),
@@ -40,10 +45,13 @@ export default function PropertyDiscovery() {
   ].filter(Boolean).length;
 
   const hasActiveFilters =
-    activeFilterCount > 0 || filters.pinCode !== "";
+    activeFilterCount > 0 ||
+    filters.pinCode !== "" ||
+    budgetInput !== "";
 
   function resetFilters() {
     setFilters({ ...initialFilters });
+    setBudgetInput("");
   }
 
   const budgetHint =
@@ -182,12 +190,14 @@ export default function PropertyDiscovery() {
             inputMode="numeric"
             autoComplete="off"
             placeholder="No limit"
+            aria-invalid={budgetError}
             aria-describedby="property-budget-hint"
-            value={filters.maxBudget ?? ""}
+            value={budgetInput}
             onChange={(event) => {
               const rawValue = event.target.value;
               const parsedValue = Number(rawValue);
 
+              setBudgetInput(rawValue);
               setFilters((current) => ({
                 ...current,
                 maxBudget:
@@ -200,10 +210,13 @@ export default function PropertyDiscovery() {
             }}
           />
           <span
-            className="filter-hint"
+            className={budgetError ? "filter-hint filter-hint-error" : "filter-hint"}
             id="property-budget-hint"
+            aria-live="polite"
           >
-            {budgetHint}
+            {budgetError
+              ? "Enter a budget greater than ₹0, or clear the field to remove the limit."
+              : budgetHint}
           </span>
         </div>
 
@@ -221,11 +234,13 @@ export default function PropertyDiscovery() {
             {filters.pinCode !== "" &&
             !/^\d{6}$/.test(filters.pinCode)
               ? "Enter 6 digits to apply the PIN filter"
-              : activeFilterCount === 0
-                ? "Showing all sample listings"
-                : `${activeFilterCount} ${
-                    activeFilterCount === 1 ? "filter" : "filters"
-                  } applied`}
+              : budgetError
+                ? "Correct the budget or clear it to remove the limit"
+                : activeFilterCount === 0
+                  ? "Showing all sample listings"
+                  : `${activeFilterCount} ${
+                      activeFilterCount === 1 ? "filter" : "filters"
+                    } applied`}
           </p>
         </div>
       </form>

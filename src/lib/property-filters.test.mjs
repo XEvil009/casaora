@@ -255,3 +255,49 @@ test("returns unique localities in alphabetical order", () => {
 test("returns an empty locality list for no properties", () => {
   assert.deepEqual(getPropertyLocalities([]), []);
 });
+
+
+test("combines all five property filters", () => {
+  const results = filterProperties(mockProperties, {
+    listingType: "rent",
+    locality: "New Town",
+    pinCode: "700156",
+    bhk: 2,
+    maxBudget: 28000,
+  });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].id, "mock-004");
+});
+
+test("keeps other filters effective with an incomplete PIN", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "rent",
+    pinCode: "70015",
+  });
+
+  assert.equal(results.length, 3);
+  assert.ok(results.every((property) => property.listingType === "rent"));
+});
+
+test("trims whitespace around a valid PIN code", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    pinCode: " 700156 ",
+  });
+
+  assert.equal(results.length, 2);
+  assert.ok(results.every((property) => property.pinCode === "700156"));
+});
+
+test("ignores a budget supplied with the wrong runtime type", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "rent",
+    maxBudget: "28000",
+  });
+
+  assert.equal(results.length, 3);
+  assert.ok(results.every((property) => property.listingType === "rent"));
+});
