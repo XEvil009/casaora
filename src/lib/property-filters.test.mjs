@@ -1,0 +1,107 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { mockProperties } from "../data/mock-properties.ts";
+import { filterProperties } from "./property-filters.ts";
+
+const allFilters = {
+  listingType: "all",
+  locality: "all",
+  bhk: "all",
+  maxBudget: null,
+};
+
+test("returns all six properties without filters", () => {
+  assert.equal(
+    filterProperties(mockProperties, allFilters).length,
+    6,
+  );
+});
+
+test("filters properties for rent", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "rent",
+  });
+
+  assert.equal(results.length, 3);
+  assert.ok(results.every((property) => property.listingType === "rent"));
+});
+
+test("filters properties for sale", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "sale",
+  });
+
+  assert.equal(results.length, 3);
+  assert.ok(results.every((property) => property.listingType === "sale"));
+});
+
+test("filters by locality", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    locality: "New Town",
+  });
+
+  assert.equal(results.length, 2);
+  assert.ok(results.every((property) => property.locality === "New Town"));
+});
+
+test("filters by BHK", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    bhk: 2,
+  });
+
+  assert.equal(results.length, 2);
+  assert.ok(results.every((property) => property.bhk === 2));
+});
+
+test("uses an inclusive maximum budget", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "rent",
+    maxBudget: 24000,
+  });
+
+  assert.ok(results.length > 0);
+  assert.ok(results.every((property) => property.priceInRupees <= 24000));
+  assert.ok(results.some((property) => property.priceInRupees === 24000));
+});
+
+test("combines listing type, locality, BHK, and budget", () => {
+  const results = filterProperties(mockProperties, {
+    listingType: "rent",
+    locality: "New Town",
+    bhk: 2,
+    maxBudget: 30000,
+  });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].id, "mock-004");
+});
+
+test("returns no results for impossible filters", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    locality: "New Town",
+    bhk: 4,
+    maxBudget: 1000,
+  });
+
+  assert.deepEqual(results, []);
+});
+
+test("does not mutate the original dataset", () => {
+  const originalIds = mockProperties.map((property) => property.id);
+
+  filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "sale",
+  });
+
+  assert.deepEqual(
+    mockProperties.map((property) => property.id),
+    originalIds,
+  );
+});

@@ -1,34 +1,5 @@
 import SiteHeader from "@/components/site-header";
-const properties = [
-  {
-    type: "FOR SALE",
-    name: "A considered family home",
-    location: "New Town, Action Area I",
-    details: "3 BHK  ·  1,420 sq. ft.",
-    price: "₹ 92 lakh",
-    initials: "NT",
-    style: "property-art-newtown",
-  },
-  {
-    type: "FOR RENT",
-    name: "A bright city apartment",
-    location: "Salt Lake, Sector V",
-    details: "2 BHK  ·  980 sq. ft.",
-    price: "₹ 24,000 / month",
-    initials: "SL",
-    style: "property-art-saltlake",
-  },
-  {
-    type: "FOR SALE",
-    name: "Room to grow together",
-    location: "Rajarhat, Kolkata",
-    details: "3 BHK  ·  1,560 sq. ft.",
-    price: "₹ 78 lakh",
-    initials: "RH",
-    style: "property-art-rajarhat",
-  },
-];
-
+import PropertyDiscovery from "@/components/property-discovery";
 const audiences = [
   {
     number: "01",
@@ -187,44 +158,17 @@ export default function Home() {
         <div className="container">
           <div className="section-heading-row">
             <div className="section-intro">
-              <span className="eyebrow">A TASTE OF KOLKATA</span>
+              <span className="eyebrow">EXPLORE KOLKATA</span>
               <h2>Every home has a story.</h2>
               <p>
-                Start exploring the kinds of opportunities CASAORA is being
-                designed to bring together.
+                Discover sample property opportunities by location,
+                budget, and the space you need.
               </p>
             </div>
-            <span className="sample-label">ILLUSTRATIVE SAMPLE LISTINGS</span>
+            <span className="sample-label">FICTIONAL DEVELOPMENT DATA</span>
           </div>
 
-          <div className="property-grid">
-            {properties.map((property) => (
-              <article className="property-card" key={property.initials}>
-                <div className={`property-art ${property.style}`}>
-                  <span className="property-type">{property.type}</span>
-                  <span className="property-monogram">{property.initials}</span>
-                  <span className="art-caption">KOLKATA / RESIDENTIAL</span>
-                </div>
-                <div className="property-content">
-                  <span className="property-location">
-                    <span aria-hidden="true">⌖</span> {property.location}
-                  </span>
-                  <h3>{property.name}</h3>
-                  <p className="property-details">{property.details}</p>
-                  <div className="property-card-footer">
-                    <strong>{property.price}</strong>
-                    <span aria-hidden="true">↗</span>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <p className="sample-disclaimer">
-            These are fictional examples for the Day 2 interface preview, not
-            verified properties or live offers. Property search and listing
-            data will be connected in a later development stage.
-          </p>
+          <PropertyDiscovery />
         </div>
       </section>
 

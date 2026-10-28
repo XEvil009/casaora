@@ -1,0 +1,203 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { mockProperties } from "@/data/mock-properties";
+import PropertyCard from "@/components/property-card";
+import { filterProperties } from "@/lib/property-filters";
+import type {
+  PropertyFilters,
+  PropertyListingType,
+} from "@/types/property";
+
+const initialFilters: PropertyFilters = {
+  listingType: "all",
+  locality: "all",
+  bhk: "all",
+  maxBudget: null,
+};
+
+const localities = [
+  "New Town",
+  "Salt Lake",
+  "Rajarhat",
+];
+
+export default function PropertyDiscovery() {
+  const [filters, setFilters] =
+    useState<PropertyFilters>(initialFilters);
+
+  const filteredProperties = useMemo(
+    () => filterProperties(mockProperties, filters),
+    [filters],
+  );
+
+  function resetFilters() {
+    setFilters(initialFilters);
+  }
+
+  return (
+    <div className="discovery">
+      <div className="discovery-notice" role="note">
+        <strong>Development preview</strong>
+        <span>
+          All six listings are fictional sample data, not
+          verified properties or live offers.
+        </span>
+      </div>
+
+      <form
+        className="property-filters"
+        onSubmit={(event) => event.preventDefault()}
+        aria-label="Property search filters"
+      >
+        <div className="filter-field">
+          <label htmlFor="listing-type">Looking to</label>
+          <select
+            id="listing-type"
+            value={filters.listingType}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (
+                value === "all" ||
+                value === "sale" ||
+                value === "rent"
+              ) {
+                setFilters((current) => ({
+                  ...current,
+                  listingType: value as
+                    | "all"
+                    | PropertyListingType,
+                }));
+              }
+            }}
+          >
+            <option value="all">Buy or rent</option>
+            <option value="sale">Buy</option>
+            <option value="rent">Rent</option>
+          </select>
+        </div>
+
+        <div className="filter-field">
+          <label htmlFor="property-locality">Locality</label>
+          <select
+            id="property-locality"
+            value={filters.locality}
+            onChange={(event) =>
+              setFilters((current) => ({
+                ...current,
+                locality: event.target.value,
+              }))
+            }
+          >
+            <option value="all">All localities</option>
+            {localities.map((locality) => (
+              <option key={locality} value={locality}>
+                {locality}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-field">
+          <label htmlFor="property-bhk">Bedrooms</label>
+          <select
+            id="property-bhk"
+            value={filters.bhk}
+            onChange={(event) => {
+              const value = event.target.value;
+              setFilters((current) => ({
+                ...current,
+                bhk: value === "all" ? "all" : Number(value),
+              }));
+            }}
+          >
+            <option value="all">Any BHK</option>
+            <option value="1">1 BHK</option>
+            <option value="2">2 BHK</option>
+            <option value="3">3 BHK</option>
+            <option value="4">4 BHK</option>
+          </select>
+        </div>
+
+        <div className="filter-field">
+          <label htmlFor="property-budget">
+            Maximum budget (₹)
+          </label>
+          <input
+            id="property-budget"
+            type="number"
+            min="1"
+            step="1000"
+            inputMode="numeric"
+            placeholder="No limit"
+            value={filters.maxBudget ?? ""}
+            onChange={(event) => {
+              const rawValue = event.target.value;
+              const parsedValue = Number(rawValue);
+
+              setFilters((current) => ({
+                ...current,
+                maxBudget:
+                  rawValue !== "" &&
+                  Number.isFinite(parsedValue) &&
+                  parsedValue > 0
+                    ? parsedValue
+                    : null,
+              }));
+            }}
+          />
+          <span className="filter-hint">
+            Rent is monthly; sale is total price.
+          </span>
+        </div>
+
+        <button
+          className="button button-dark filter-reset"
+          type="button"
+          onClick={resetFilters}
+        >
+          Reset filters
+        </button>
+      </form>
+
+      <div
+        className="discovery-results-heading"
+        aria-live="polite"
+      >
+        <h3>Properties to explore</h3>
+        <p>
+          {filteredProperties.length}{" "}
+          {filteredProperties.length === 1
+            ? "sample listing"
+            : "sample listings"}{" "}
+          found
+        </p>
+      </div>
+
+      {filteredProperties.length > 0 ? (
+        <div className="property-grid">
+          {filteredProperties.map((property) => (
+            <PropertyCard
+              key={property.id}
+              property={property}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="discovery-empty" role="status">
+          <h3>No sample properties match those filters</h3>
+          <p>
+            Try another locality, bedroom count, or budget.
+          </p>
+          <button
+            className="button button-light"
+            type="button"
+            onClick={resetFilters}
+          >
+            Clear all filters
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
