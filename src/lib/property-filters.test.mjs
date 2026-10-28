@@ -291,6 +291,21 @@ test("trims whitespace around a valid PIN code", () => {
   assert.ok(results.every((property) => property.pinCode === "700156"));
 });
 
+test("ignores PIN filters with unsupported runtime types", () => {
+  for (const pinCode of [null, 700156, {}, undefined]) {
+    const results = filterProperties(mockProperties, {
+      ...allFilters,
+      listingType: "rent",
+      pinCode,
+    });
+
+    assert.equal(results.length, 3);
+    assert.ok(
+      results.every((property) => property.listingType === "rent"),
+    );
+  }
+});
+
 test("ignores a budget supplied with the wrong runtime type", () => {
   const results = filterProperties(mockProperties, {
     ...allFilters,

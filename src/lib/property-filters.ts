@@ -8,7 +8,10 @@ export function filterProperties(
   filters: PropertyFilters,
 ): Property[] {
   const maxBudget = filters.maxBudget;
-  const pinCode = filters.pinCode.trim();
+  const pinCode =
+    typeof filters.pinCode === "string"
+      ? filters.pinCode.trim()
+      : "";
   const hasValidPinCode = /^\d{6}$/.test(pinCode);
   const hasValidListingType =
     filters.listingType === "all" ||
