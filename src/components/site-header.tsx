@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 
 const navigationLinks = [
-  { href: "#discover", label: "Explore homes" },
-  { href: "#broker", label: "For brokers" },
-  { href: "#how-it-works", label: "How it works" },
+  { href: "/#discover", label: "Explore homes" },
+  { href: "/#broker", label: "For brokers" },
+  { href: "/#how-it-works", label: "How it works" },
 ];
 
 export default function SiteHeader() {
@@ -18,9 +19,9 @@ export default function SiteHeader() {
   return (
     <header className="site-header">
       <div className="container nav-shell">
-        <a
+        <Link
           className="brand"
-          href="#home"
+          href="/"
           aria-label="CASAORA home"
           onClick={closeMenu}
         >
@@ -33,7 +34,7 @@ export default function SiteHeader() {
               PROPERTY. PEOPLE. POSSIBILITIES.
             </span>
           </span>
-        </a>
+        </Link>
 
         <nav
           className={`main-nav${menuOpen ? " is-open" : ""}`}
@@ -41,30 +42,30 @@ export default function SiteHeader() {
           aria-label="Main navigation"
         >
           {navigationLinks.map((link) => (
-            <a
+            <Link
               href={link.href}
               key={link.href}
               onClick={closeMenu}
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
-        <a
+        <Link
           className="button button-dark nav-cta"
-          href="#get-started"
+          href="/#get-started"
           onClick={closeMenu}
         >
           Get started <span aria-hidden="true">↗</span>
-        </a>
+        </Link>
 
         <button
           className="menu-toggle"
           type="button"
           aria-controls="primary-navigation"
           aria-expanded={menuOpen}
-          aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-label="Navigation menu"
           onClick={() => setMenuOpen((open) => !open)}
         >
           <span aria-hidden="true">{menuOpen ? "✕" : "☰"}</span>
