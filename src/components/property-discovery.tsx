@@ -15,6 +15,7 @@ import type {
 const initialFilters: PropertyFilters = {
   listingType: "all",
   locality: "all",
+  pinCode: "",
   bhk: "all",
   maxBudget: null,
 };
@@ -33,11 +34,13 @@ export default function PropertyDiscovery() {
   const activeFilterCount = [
     filters.listingType !== "all",
     filters.locality !== "all",
+    /^\d{6}$/.test(filters.pinCode),
     filters.bhk !== "all",
     filters.maxBudget !== null,
   ].filter(Boolean).length;
 
-  const hasActiveFilters = activeFilterCount > 0;
+  const hasActiveFilters =
+    activeFilterCount > 0 || filters.pinCode !== "";
 
   function resetFilters() {
     setFilters({ ...initialFilters });
@@ -115,6 +118,37 @@ export default function PropertyDiscovery() {
         </div>
 
         <div className="filter-field">
+          <label htmlFor="property-pin-code">PIN code</label>
+          <input
+            id="property-pin-code"
+            type="text"
+            inputMode="numeric"
+            autoComplete="postal-code"
+            maxLength={6}
+            pattern="[0-9]{6}"
+            placeholder="e.g. 700156"
+            aria-describedby="property-pin-code-hint"
+            value={filters.pinCode}
+            onChange={(event) => {
+              const value = event.target.value
+                .replace(/\D/g, "")
+                .slice(0, 6);
+
+              setFilters((current) => ({
+                ...current,
+                pinCode: value,
+              }));
+            }}
+          />
+          <span
+            className="filter-hint"
+            id="property-pin-code-hint"
+          >
+            Enter all 6 digits to filter by PIN code.
+          </span>
+        </div>
+
+        <div className="filter-field">
           <label htmlFor="property-bhk">Bedrooms</label>
           <select
             id="property-bhk"
@@ -184,11 +218,14 @@ export default function PropertyDiscovery() {
           </button>
 
           <p className="active-filter-count">
-            {activeFilterCount === 0
-              ? "Showing all sample listings"
-              : `${activeFilterCount} ${
-                  activeFilterCount === 1 ? "filter" : "filters"
-                } applied`}
+            {filters.pinCode !== "" &&
+            !/^\d{6}$/.test(filters.pinCode)
+              ? "Enter 6 digits to apply the PIN filter"
+              : activeFilterCount === 0
+                ? "Showing all sample listings"
+                : `${activeFilterCount} ${
+                    activeFilterCount === 1 ? "filter" : "filters"
+                  } applied`}
           </p>
         </div>
       </form>

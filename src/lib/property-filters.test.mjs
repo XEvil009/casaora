@@ -9,6 +9,7 @@ import {
 const allFilters = {
   listingType: "all",
   locality: "all",
+  pinCode: "",
   bhk: "all",
   maxBudget: null,
 };
@@ -50,6 +51,40 @@ test("filters by locality", () => {
   assert.ok(results.every((property) => property.locality === "New Town"));
 });
 
+test("filters by an exact six-digit PIN code", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    pinCode: "700156",
+  });
+
+  assert.equal(results.length, 2);
+  assert.ok(results.every((property) => property.pinCode === "700156"));
+});
+
+test("combines PIN code with locality and listing type", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "rent",
+    locality: "New Town",
+    pinCode: "700156",
+  });
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].id, "mock-004");
+});
+
+test("ignores incomplete or invalid PIN codes in the filter function", () => {
+  for (const pinCode of ["7", "70015", "70015x", "1234567"]) {
+    assert.deepEqual(
+      filterProperties(mockProperties, {
+        ...allFilters,
+        pinCode,
+      }),
+      mockProperties,
+    );
+  }
+});
+
 test("filters by BHK", () => {
   const results = filterProperties(mockProperties, {
     ...allFilters,
@@ -76,6 +111,7 @@ test("combines listing type, locality, BHK, and budget", () => {
   const results = filterProperties(mockProperties, {
     listingType: "rent",
     locality: "New Town",
+    pinCode: "",
     bhk: 2,
     maxBudget: 30000,
   });

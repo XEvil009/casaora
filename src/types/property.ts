@@ -16,6 +16,7 @@ export interface Property {
 export interface PropertyFilters {
   listingType: "all" | PropertyListingType;
   locality: string;
+  pinCode: string;
   bhk: "all" | number;
   maxBudget: number | null;
 }

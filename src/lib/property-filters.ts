@@ -8,6 +8,8 @@ export function filterProperties(
   filters: PropertyFilters,
 ): Property[] {
   const maxBudget = filters.maxBudget;
+  const pinCode = filters.pinCode.trim();
+  const hasValidPinCode = /^\d{6}$/.test(pinCode);
 
   const hasValidBudget =
     maxBudget !== null &&
@@ -25,6 +27,13 @@ export function filterProperties(
     if (
       filters.locality !== "all" &&
       property.locality !== filters.locality
+    ) {
+      return false;
+    }
+
+    if (
+      hasValidPinCode &&
+      property.pinCode !== pinCode
     ) {
       return false;
     }
