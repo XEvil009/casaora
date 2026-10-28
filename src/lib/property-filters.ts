@@ -46,3 +46,11 @@ export function filterProperties(
     return true;
   });
 }
+
+export function getPropertyLocalities(
+  properties: readonly Property[],
+): string[] {
+  return [...new Set(
+    properties.map((property) => property.locality),
+  )].sort((a, b) => a.localeCompare(b));
+}

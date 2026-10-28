@@ -1,7 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { mockProperties } from "../data/mock-properties.ts";
-import { filterProperties } from "./property-filters.ts";
+import {
+  filterProperties,
+  getPropertyLocalities,
+} from "./property-filters.ts";
 
 const allFilters = {
   listingType: "all",
@@ -203,4 +206,16 @@ test("still applies other filters when the budget is invalid", () => {
   assert.ok(
     results.every((property) => property.listingType === "rent"),
   );
+});
+
+
+test("returns unique localities in alphabetical order", () => {
+  assert.deepEqual(
+    getPropertyLocalities(mockProperties),
+    ["New Town", "Rajarhat", "Salt Lake"],
+  );
+});
+
+test("returns an empty locality list for no properties", () => {
+  assert.deepEqual(getPropertyLocalities([]), []);
 });

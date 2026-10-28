@@ -3,7 +3,10 @@
 import { useMemo, useState } from "react";
 import { mockProperties } from "@/data/mock-properties";
 import PropertyCard from "@/components/property-card";
-import { filterProperties } from "@/lib/property-filters";
+import {
+  filterProperties,
+  getPropertyLocalities,
+} from "@/lib/property-filters";
 import type {
   PropertyFilters,
   PropertyListingType,
@@ -16,11 +19,7 @@ const initialFilters: PropertyFilters = {
   maxBudget: null,
 };
 
-const localities = [
-  "New Town",
-  "Salt Lake",
-  "Rajarhat",
-];
+const localities = getPropertyLocalities(mockProperties);
 
 export default function PropertyDiscovery() {
   const [filters, setFilters] =
