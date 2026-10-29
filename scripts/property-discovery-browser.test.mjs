@@ -355,6 +355,61 @@ test("property discovery works in a real Chromium browser", async (t) => {
     );
   });
 
+  await t.test("reset clears every filter and invalid budget state", async () => {
+    await click(".filter-reset");
+
+    await setSelect("#listing-type", "rent");
+    await setSelect("#property-locality", "New Town");
+    await setInput("#property-pin-code", "700156");
+    await setSelect("#property-bhk", "2");
+    await setInput("#property-budget", "30000");
+
+    await waitForCount("1 sample listing found");
+
+    await setInput("#property-budget", "0");
+
+    const invalidBeforeReset = await evaluate(
+      `document.querySelector("#property-budget")?.getAttribute("aria-invalid") === "true"`,
+    );
+    assert.equal(
+      invalidBeforeReset,
+      true,
+      "The zero budget should expose the invalid state before reset.",
+    );
+
+    await click(".filter-reset");
+    await waitForCount("6 sample listings found");
+
+    const resetState = await evaluate(`(() => {
+      const value = (selector) =>
+        document.querySelector(selector)?.value ?? null;
+      const budget = document.querySelector("#property-budget");
+      const reset = document.querySelector(".filter-reset");
+
+      return {
+        listingType: value("#listing-type"),
+        locality: value("#property-locality"),
+        pinCode: value("#property-pin-code"),
+        bhk: value("#property-bhk"),
+        budget: value("#property-budget"),
+        budgetInvalid: budget?.getAttribute("aria-invalid"),
+        resetDisabled: reset?.disabled,
+        resetText: reset?.textContent?.trim(),
+      };
+    })()`);
+
+    assert.deepEqual(resetState, {
+      listingType: "all",
+      locality: "all",
+      pinCode: "",
+      bhk: "all",
+      budget: "",
+      budgetInvalid: "false",
+      resetDisabled: true,
+      resetText: "No filters applied",
+    });
+  });
+
   await t.test("shows empty state and clears an unmatched PIN", async () => {
     await click(".filter-reset");
     await waitForCount("6 sample listings found");
