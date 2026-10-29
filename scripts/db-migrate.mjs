@@ -1,3 +1,4 @@
+import { combineCleanupError, rollbackAndRethrow } from "./lib/db-migration-errors.mjs";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -401,8 +402,7 @@ async function commandMigrate(client, migrations) {
       await client.query("COMMIT");
       console.log(`APPLIED  ${migration.name}`);
     } catch (error) {
-      await client.query("ROLLBACK").catch(() => {});
-      throw error;
+      await rollbackAndRethrow(client, error, "Migration");
     }
   }
 
@@ -435,8 +435,7 @@ async function commandAdoptInitial(client, migrations) {
 
     await client.query("COMMIT");
   } catch (error) {
-    await client.query("ROLLBACK").catch(() => {});
-    throw error;
+    await rollbackAndRethrow(client, error, "Initial adoption");
   }
 
   console.log("ADOPTED  0001_initial_schema.sql");
@@ -465,8 +464,12 @@ async function main() {
 
   const client = await connect(databaseName);
 
+  let lockAcquired = false;
+  let commandError;
+
   try {
     await acquireLock(client);
+    lockAcquired = true;
 
     if (command === "status") {
       await commandStatus(client, migrations);
@@ -477,9 +480,46 @@ async function main() {
     } else {
       await commandAdoptInitial(client, migrations);
     }
-  } finally {
-    await releaseLock(client).catch(() => {});
+  } catch (error) {
+    commandError = error;
+  }
+
+  let cleanupError;
+
+  if (lockAcquired) {
+    try {
+      await releaseLock(client);
+    } catch (error) {
+      cleanupError = error;
+    }
+  }
+
+  try {
     await client.end();
+  } catch (error) {
+    cleanupError = cleanupError
+      ? combineCleanupError(
+          cleanupError,
+          error,
+          "Database client shutdown",
+        )
+      : error;
+  }
+
+  if (commandError && cleanupError) {
+    throw combineCleanupError(
+      commandError,
+      cleanupError,
+      "Database cleanup",
+    );
+  }
+
+  if (commandError) {
+    throw commandError;
+  }
+
+  if (cleanupError) {
+    throw cleanupError;
   }
 }
 

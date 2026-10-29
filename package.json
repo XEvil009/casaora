@@ -12,7 +12,7 @@
     "test:ui-contracts": "node --test scripts/ui-contracts.test.mjs",
     "test:browser": "node --test scripts/property-discovery-browser.test.mjs",
     "db:migrate": "node scripts/db-migrate.mjs",
-    "test:db-migrations": "node --test scripts/db-migrations.test.mjs scripts/db-migration-contract.test.mjs",
+    "test:db-migrations": "node --test scripts/db-migrations.test.mjs scripts/db-migration-contract.test.mjs scripts/db-migration-errors.test.mjs",
     "test:db-migrations:integration": "node --test scripts/db-migrations.integration.test.mjs"
   },
   "dependencies": {

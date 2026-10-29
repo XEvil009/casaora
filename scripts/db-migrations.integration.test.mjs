@@ -162,6 +162,11 @@ async function withFixtureAndDatabase(initialSql, callback) {
       path.join(fixture, "scripts", "lib", "db-migrations.mjs"),
     );
 
+    await copyFile(
+      path.join(ROOT, "scripts", "lib", "db-migration-errors.mjs"),
+      path.join(fixture, "scripts", "lib", "db-migration-errors.mjs"),
+    );
+
     // The fixture is nested inside the project, so Node can resolve the
     // project's existing node_modules without installing anything.
     await writeFile(
