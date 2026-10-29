@@ -4,12 +4,10 @@ import fs from "node:fs";
 import {
   mkdtemp,
   mkdir,
-  readFile,
   rm,
   writeFile,
   copyFile,
 } from "node:fs/promises";
-import os from "node:os";
 import path from "node:path";
 import { spawn, spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
