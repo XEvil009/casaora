@@ -437,6 +437,231 @@ test(
 
       assert.equal(activeQueues.rows[0].count, 2);
 
+      // 10. Financial transactions enforce amounts, references and idempotency.
+      const listingResult = await client.query(
+        "INSERT INTO property_listings (property_id, broker_id, title, listing_type, price_in_rupees, status) " +
+          "VALUES ($1, $2, 'Financial Schema Test Listing', 'sale', 5000000, 'published') RETURNING id",
+        [propertyId, brokerId],
+      );
+      const listingId = listingResult.rows[0].id;
+
+      const transactionKey = "schema-tx-" + randomBytes(8).toString("hex");
+      const transactionResult = await client.query(
+        "INSERT INTO property_transactions " +
+          "(customer_id, property_id, listing_id, selected_broker_id, agreed_amount, commission_amount, idempotency_key) " +
+          "VALUES ($1, $2, $3, $4, 5000000, 250000, $5) RETURNING id",
+        [customerId, propertyId, listingId, brokerId, transactionKey],
+      );
+      const transactionId = transactionResult.rows[0].id;
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO property_transactions " +
+            "(customer_id, property_id, listing_id, selected_broker_id, agreed_amount, idempotency_key) " +
+            "VALUES ($1, $2, $3, $4, 1000, $5)",
+          [customerId, propertyId, listingId, brokerId, transactionKey],
+        ),
+        "23505",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO property_transactions " +
+            "(customer_id, property_id, listing_id, selected_broker_id, agreed_amount, idempotency_key) " +
+            "VALUES ($1, $2, $3, $4, 0, $5)",
+          [customerId, propertyId, listingId, brokerId, "schema-tx-zero-" + randomBytes(6).toString("hex")],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO property_transactions " +
+            "(customer_id, property_id, listing_id, selected_broker_id, agreed_amount, commission_amount, idempotency_key) " +
+            "VALUES ($1, $2, $3, $4, 1000, -1, $5)",
+          [customerId, propertyId, listingId, brokerId, "schema-tx-commission-" + randomBytes(6).toString("hex")],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO property_transactions " +
+            "(customer_id, property_id, listing_id, selected_broker_id, agreed_amount, idempotency_key) " +
+            "VALUES ($1, $2, $3, $4, 1000, '   ')",
+          [customerId, propertyId, listingId, brokerId],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO property_transactions " +
+            "(customer_id, property_id, listing_id, selected_broker_id, agreed_amount, idempotency_key) " +
+            "VALUES ($1, $2, $3, $4, 1000, $5)",
+          ["00000000-0000-0000-0000-000000000001", propertyId, listingId, brokerId, "schema-tx-fk-" + randomBytes(6).toString("hex")],
+        ),
+        "23503",
+      );
+
+      console.log("PASS: transaction amount, commission, foreign key and idempotency constraints are enforced.");
+
+      // 11. Payments enforce positive amounts, valid transactions and idempotency.
+      const paymentKey = "schema-payment-" + randomBytes(8).toString("hex");
+      const paymentResult = await client.query(
+        "INSERT INTO payments (transaction_id, amount, status, idempotency_key) " +
+          "VALUES ($1, 10000, 'succeeded', $2) RETURNING id",
+        [transactionId, paymentKey],
+      );
+      const paymentId = paymentResult.rows[0].id;
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO payments (transaction_id, amount, idempotency_key) VALUES ($1, 10000, $2)",
+          [transactionId, paymentKey],
+        ),
+        "23505",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO payments (transaction_id, amount, idempotency_key) VALUES ($1, 0, $2)",
+          [transactionId, "schema-payment-zero-" + randomBytes(6).toString("hex")],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO payments (transaction_id, amount, idempotency_key) VALUES ($1, 100, '   ')",
+          [transactionId],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO payments (transaction_id, amount, idempotency_key) VALUES ($1, 100, $2)",
+          ["00000000-0000-0000-0000-000000000002", "schema-payment-fk-" + randomBytes(6).toString("hex")],
+        ),
+        "23503",
+      );
+
+      console.log("PASS: payment amount, foreign key and idempotency constraints are enforced.");
+
+      // 12. Ledger entries enforce nonzero amounts, INR currency and valid references.
+      const ledgerKey = "schema-ledger-" + randomBytes(8).toString("hex");
+      await client.query(
+        "INSERT INTO financial_ledger_entries " +
+          "(transaction_id, payment_id, entry_type, amount, idempotency_key) " +
+          "VALUES ($1, $2, 'payment', 10000, $3)",
+        [transactionId, paymentId, ledgerKey],
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO financial_ledger_entries " +
+            "(transaction_id, entry_type, amount, idempotency_key) VALUES ($1, 'payment', 100, $2)",
+          [transactionId, ledgerKey],
+        ),
+        "23505",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO financial_ledger_entries " +
+            "(transaction_id, entry_type, amount, idempotency_key) VALUES ($1, 'payment', 0, $2)",
+          [transactionId, "schema-ledger-zero-" + randomBytes(6).toString("hex")],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO financial_ledger_entries " +
+            "(transaction_id, entry_type, amount, currency, idempotency_key) " +
+            "VALUES ($1, 'payment', 100, 'USD', $2)",
+          [transactionId, "schema-ledger-currency-" + randomBytes(6).toString("hex")],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO financial_ledger_entries " +
+            "(transaction_id, entry_type, amount, idempotency_key) VALUES ($1, 'payment', 100, $2)",
+          ["00000000-0000-0000-0000-000000000003", "schema-ledger-tx-fk-" + randomBytes(6).toString("hex")],
+        ),
+        "23503",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO financial_ledger_entries " +
+            "(transaction_id, payment_id, entry_type, amount, idempotency_key) " +
+            "VALUES ($1, $2, 'payment', 100, $3)",
+          [transactionId, "00000000-0000-0000-0000-000000000004", "schema-ledger-payment-fk-" + randomBytes(6).toString("hex")],
+        ),
+        "23503",
+      );
+
+      console.log("PASS: ledger amount, INR currency, foreign keys and idempotency constraints are enforced.");
+
+      // 13. Reward events enforce nonzero points, valid users and unique references.
+      const rewardKey = "schema-reward-" + randomBytes(8).toString("hex");
+      await client.query(
+        "INSERT INTO reward_events (user_id, points, event_type, reference_key) " +
+          "VALUES ($1, 10, 'schema_test', $2)",
+        [brokerId, rewardKey],
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO reward_events (user_id, points, event_type, reference_key) " +
+            "VALUES ($1, 5, 'schema_test', $2)",
+          [brokerId, rewardKey],
+        ),
+        "23505",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO reward_events (user_id, points, event_type, reference_key) " +
+            "VALUES ($1, 0, 'schema_test', $2)",
+          [brokerId, "schema-reward-zero-" + randomBytes(6).toString("hex")],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO reward_events (user_id, points, event_type, reference_key) " +
+            "VALUES ($1, 10, '   ', $2)",
+          [brokerId, "schema-reward-type-" + randomBytes(6).toString("hex")],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO reward_events (user_id, points, event_type, reference_key) " +
+            "VALUES ($1, 10, 'schema_test', '   ')",
+          [brokerId],
+        ),
+        "23514",
+      );
+
+      await expectPgError(
+        client.query(
+          "INSERT INTO reward_events (user_id, points, event_type, reference_key) " +
+            "VALUES ($1, 10, 'schema_test', $2)",
+          ["00000000-0000-0000-0000-000000000005", "schema-reward-fk-" + randomBytes(6).toString("hex")],
+        ),
+        "23503",
+      );
+
+      console.log("PASS: reward points, user foreign key and reference idempotency constraints are enforced.");
+
       console.log("PASS: all 12 core tables exist.");
       console.log("PASS: required enums, indexes and foreign keys exist.");
       console.log("PASS: canonical property uniqueness is enforced.");
