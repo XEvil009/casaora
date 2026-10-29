@@ -1,4 +1,4 @@
-import { combineCleanupError, rollbackAndRethrow } from "./lib/db-migration-errors.mjs";
+import { combineCleanupError, rollbackAndRethrow, runCleanupActions } from "./lib/db-migration-errors.mjs";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
@@ -234,6 +234,7 @@ async function verifyInitialSchema(client, migrations) {
   );
 
   const fs = await import("node:fs/promises");
+  let verificationError;
 
   try {
     const existing = await admin.query(
@@ -255,8 +256,11 @@ async function verifyInitialSchema(client, migrations) {
       await tempClient.query(migrations[0].executableSql);
       await tempClient.query("COMMIT");
     } catch (error) {
-      await tempClient.query("ROLLBACK");
-      throw error;
+      await rollbackAndRethrow(
+        tempClient,
+        error,
+        "Initial schema verification",
+      );
     }
 
     await tempClient.end();
@@ -281,18 +285,46 @@ async function verifyInitialSchema(client, migrations) {
     }
 
     console.log("PASS: Existing schema matches migration 0001.");
-  } finally {
-    if (tempClient) await tempClient.end().catch(() => {});
-    if (created) {
-      await admin.query(
-        "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1",
-        [tempName],
-      ).catch(() => {});
-      await admin.query(`DROP DATABASE IF EXISTS "${tempName}"`).catch(() => {});
-    }
-    await admin.end();
-    await fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+  } catch (error) {
+    verificationError = error;
   }
+
+  const cleanupActions = [];
+
+  if (tempClient) {
+    cleanupActions.push({
+      action: "Temporary verification client shutdown",
+      run: () => tempClient.end(),
+    });
+  }
+
+  if (created) {
+    cleanupActions.push({
+      action: "Temporary verification connection termination",
+      run: () =>
+        admin.query(
+          "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1",
+          [tempName],
+        ),
+    });
+
+    cleanupActions.push({
+      action: "Temporary verification database removal",
+      run: () => admin.query(`DROP DATABASE IF EXISTS "${tempName}"`),
+    });
+  }
+
+  cleanupActions.push({
+    action: "Verification admin client shutdown",
+    run: () => admin.end(),
+  });
+
+  cleanupActions.push({
+    action: "Verification temporary directory removal",
+    run: () => fs.rm(tempDir, { recursive: true, force: true }),
+  });
+
+  await runCleanupActions(cleanupActions, verificationError);
 }
 
 async function commandStatus(client, migrations) {

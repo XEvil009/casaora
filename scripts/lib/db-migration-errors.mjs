@@ -26,3 +26,21 @@ export async function rollbackAndRethrow(client, primaryError, context) {
 
   throw primaryError;
 }
+
+export async function runCleanupActions(actions, primaryError) {
+  let combinedError = primaryError;
+
+  for (const { action, run } of actions) {
+    try {
+      await run();
+    } catch (cleanupError) {
+      combinedError = combinedError
+        ? combineCleanupError(combinedError, cleanupError, action)
+        : asError(cleanupError);
+    }
+  }
+
+  if (combinedError) {
+    throw combinedError;
+  }
+}
