@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "node --experimental-strip-types --test src/lib/property-filters.test.mjs",
     "test:http": "node --test scripts/property-route-http.test.mjs",
-    "test:ui-contracts": "node --test scripts/ui-contracts.test.mjs"
+    "test:ui-contracts": "node --test scripts/ui-contracts.test.mjs",
+    "test:browser": "node --test scripts/property-discovery-browser.test.mjs"
   },
   "dependencies": {
     "next": "16.4.3",
