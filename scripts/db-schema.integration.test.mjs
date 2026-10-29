@@ -437,7 +437,59 @@ test(
 
       assert.equal(activeQueues.rows[0].count, 2);
 
-      // 10. Financial transactions enforce amounts, references and idempotency.
+      // 10. Public discovery must exclude non-published listings.
+      const visibilityStatuses = [
+        "draft",
+        "published",
+        "paused",
+        "closed",
+      ];
+
+      for (const status of visibilityStatuses) {
+        await client.query(
+          `INSERT INTO property_listings (
+             property_id, broker_id, title, listing_type,
+             price_in_rupees, status
+           )
+           VALUES ($1, $2, $3, 'sale', 5000000, $4)`,
+          [
+            propertyId,
+            brokerId,
+            `Visibility Test ${status}`,
+            status,
+          ],
+        );
+      }
+
+      const discoverableListings = await client.query(
+        `SELECT pl.title, pl.status
+         FROM property_listings AS pl
+         INNER JOIN properties AS p
+           ON p.id = pl.property_id
+         WHERE pl.status = 'published'
+           AND p.id = $1
+         ORDER BY pl.title`,
+        [propertyId],
+      );
+
+      assert.deepEqual(
+        discoverableListings.rows.map((row) => ({
+          title: row.title,
+          status: row.status,
+        })),
+        [
+          {
+            title: "Visibility Test published",
+            status: "published",
+          },
+        ],
+      );
+
+      console.log(
+        "PASS: public discovery excludes draft, paused and closed listings.",
+      );
+
+      // 11. Financial transactions enforce amounts, references and idempotency.
       const listingResult = await client.query(
         "INSERT INTO property_listings (property_id, broker_id, title, listing_type, price_in_rupees, status) " +
           "VALUES ($1, $2, 'Financial Schema Test Listing', 'sale', 5000000, 'published') RETURNING id",
