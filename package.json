@@ -7,7 +7,7 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test src/lib/property-filters.test.mjs",
+    "test": "node --experimental-strip-types --test src/lib/property-filters.test.mjs src/lib/property-search.test.mjs",
     "test:http": "node --test scripts/property-route-http.test.mjs",
     "test:ui-contracts": "node --test scripts/ui-contracts.test.mjs",
     "test:browser": "node --test scripts/property-discovery-browser.test.mjs",
@@ -20,7 +20,8 @@
     "next": "16.4.3",
     "pg": "^8.23.1",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

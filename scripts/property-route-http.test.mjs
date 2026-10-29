@@ -92,6 +92,8 @@ before(async () => {
       env: {
         ...process.env,
         NODE_ENV: "production",
+        DATABASE_URL:
+          "postgresql://casaora_test:casaora_test@127.0.0.1:1/casaora_test",
       },
       stdio: ["ignore", "pipe", "pipe"],
     },
@@ -131,6 +133,65 @@ after(async () => {
   } catch {
     // The process may already have exited during cleanup.
   }
+});
+
+test("property search rejects invalid filters with HTTP 400", async () => {
+  const response = await fetch(
+    `${baseUrl}/api/properties?pinCode=123&bhk=2`,
+  );
+
+  assert.equal(response.status, 400);
+  assert.match(
+    response.headers.get("content-type") ?? "",
+    /application\/json/i,
+  );
+  assert.match(
+    response.headers.get("cache-control") ?? "",
+    /no-store/i,
+  );
+
+  const body = await response.json();
+  assert.equal(body.error, "Invalid property search parameters");
+});
+
+test("property search rejects repeated filters with HTTP 400", async () => {
+  const response = await fetch(
+    `${baseUrl}/api/properties?bhk=2&bhk=3`,
+  );
+
+  assert.equal(response.status, 400);
+  assert.match(
+    response.headers.get("cache-control") ?? "",
+    /no-store/i,
+  );
+
+  const body = await response.json();
+  assert.equal(body.error, "Invalid property search parameters");
+});
+
+test("property search returns a safe HTTP 503 when its test database is unavailable", async () => {
+  const response = await fetch(
+    `${baseUrl}/api/properties?listingType=sale`,
+  );
+
+  assert.equal(response.status, 503);
+  assert.match(
+    response.headers.get("content-type") ?? "",
+    /application\/json/i,
+  );
+  assert.match(
+    response.headers.get("cache-control") ?? "",
+    /no-store/i,
+  );
+
+  const body = await response.json();
+  assert.deepEqual(body, {
+    error: "Property search is temporarily unavailable",
+  });
+  assert.doesNotMatch(
+    JSON.stringify(body),
+    /postgresql:\/\/|127\.0\.0\.1|casaora_test|password|ECONNREFUSED/i,
+  );
 });
 
 test("homepage returns HTTP 200", async () => {

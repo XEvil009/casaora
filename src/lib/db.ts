@@ -1,6 +1,7 @@
 import "server-only";
 
 import { Pool } from "pg";
+import type { QueryResult, QueryResultRow } from "pg";
 
 let pool: Pool | undefined;
 
@@ -31,6 +32,21 @@ function getPool(): Pool {
   });
 
   return pool;
+}
+
+/**
+ * Execute a parameterized query against PostgreSQL.
+ *
+ * Only server-side callers should use this function.
+ * Values are supplied separately from SQL text.
+ */
+export async function queryDatabase<
+  T extends QueryResultRow = QueryResultRow,
+>(
+  text: string,
+  values: Array<string | number> = [],
+): Promise<QueryResult<T>> {
+  return getPool().query<T>(text, values);
 }
 
 /**
