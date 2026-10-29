@@ -17,6 +17,31 @@ export const metadata: Metadata = {
   description:
     "Discover property opportunities and build better real-estate connections across Kolkata with CASAORA, a property and broker collaboration network in development.",
   applicationName: "CASAORA",
+  icons: {
+    icon: [
+      {
+        url: "/icon-192x192.png",
+        type: "image/png",
+        sizes: "192x192",
+      },
+      {
+        url: "/icon-512x512.png",
+        type: "image/png",
+        sizes: "512x512",
+      },
+      {
+        url: "/casaora-icon.svg",
+        type: "image/svg+xml",
+      },
+    ],
+    apple: [
+      {
+        url: "/apple-touch-icon.png",
+        type: "image/png",
+        sizes: "180x180",
+      },
+    ],
+  },
   openGraph: {
     title: "CASAORA | Property. People. Possibilities.",
     description:
