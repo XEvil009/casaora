@@ -15,7 +15,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
-import { runCleanupActions } from "./lib/db-migration-errors.mjs";
+import { cleanupIntegrationFixture } from "./lib/db-migration-fixture-cleanup.mjs";
 
 const { Client } = pg;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -193,21 +193,12 @@ async function withFixtureAndDatabase(initialSql, callback) {
     operationError = error;
   }
 
-  const cleanupActions = [];
-
-  if (database) {
-    cleanupActions.push({
-      action: "Disposable integration database removal",
-      run: () => dropDisposableDatabase(database.name),
-    });
-  }
-
-  cleanupActions.push({
-    action: "Integration fixture directory removal",
-    run: () => rm(fixture, { recursive: true, force: true }),
+  await cleanupIntegrationFixture({
+    database,
+    dropDatabase: dropDisposableDatabase,
+    removeFixture: () => rm(fixture, { recursive: true, force: true }),
+    operationError,
   });
-
-  await runCleanupActions(cleanupActions, operationError);
 }
 
 function runMigration(fixture, databaseUrlValue) {
