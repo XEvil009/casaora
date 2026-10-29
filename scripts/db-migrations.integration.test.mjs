@@ -16,6 +16,7 @@ import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
 import { cleanupIntegrationFixture } from "./lib/db-migration-fixture-cleanup.mjs";
+import { createDisposableDatabaseWithAdmin } from "./lib/db-migration-database-creation.mjs";
 
 const { Client } = pg;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -101,7 +102,7 @@ async function connectTo(url) {
   return client;
 }
 
-async function createDisposableDatabase() {
+async function createDisposableDatabase(onCreated) {
   const name = makeDatabaseName();
 
   // Names are generated locally and checked before being used in SQL.
@@ -109,20 +110,12 @@ async function createDisposableDatabase() {
 
   const admin = await connectTo(ADMIN_URL.toString());
 
-  try {
-    const existing = await admin.query(
-      "SELECT 1 FROM pg_database WHERE datname = $1",
-      [name],
-    );
-
-    assert.equal(existing.rowCount, 0, "Generated database name already exists");
-
-    await admin.query(`CREATE DATABASE "${name}"`);
-  } finally {
-    await admin.end();
-  }
-
-  return { name, url: databaseUrl(name) };
+  return createDisposableDatabaseWithAdmin({
+    admin,
+    name,
+    url: databaseUrl(name),
+    onCreated,
+  });
 }
 
 async function dropDisposableDatabase(name) {
@@ -177,7 +170,9 @@ async function withFixtureAndDatabase(initialSql, callback) {
       "utf8",
     );
 
-    database = await createDisposableDatabase();
+    database = await createDisposableDatabase((createdDatabase) => {
+      database = createdDatabase;
+    });
 
     await callback({
       fixture,
