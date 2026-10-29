@@ -15,6 +15,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { runCleanupActions } from "./lib/db-migration-errors.mjs";
 
 const { Client } = pg;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -147,6 +148,7 @@ async function dropDisposableDatabase(name) {
 async function withFixtureAndDatabase(initialSql, callback) {
   const fixture = await mkdtemp(path.join(ROOT, ".day33-integration-"));
   let database;
+  let operationError;
 
   try {
     await mkdir(path.join(fixture, "scripts", "lib"), { recursive: true });
@@ -187,13 +189,25 @@ async function withFixtureAndDatabase(initialSql, callback) {
         "0001_integration_test.sql",
       ),
     });
-  } finally {
-    if (database) {
-      await dropDisposableDatabase(database.name);
-    }
-
-    await rm(fixture, { recursive: true, force: true });
+  } catch (error) {
+    operationError = error;
   }
+
+  const cleanupActions = [];
+
+  if (database) {
+    cleanupActions.push({
+      action: "Disposable integration database removal",
+      run: () => dropDisposableDatabase(database.name),
+    });
+  }
+
+  cleanupActions.push({
+    action: "Integration fixture directory removal",
+    run: () => rm(fixture, { recursive: true, force: true }),
+  });
+
+  await runCleanupActions(cleanupActions, operationError);
 }
 
 function runMigration(fixture, databaseUrlValue) {
