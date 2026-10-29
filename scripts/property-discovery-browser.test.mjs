@@ -410,6 +410,23 @@ test("property discovery works in a real Chromium browser", async (t) => {
     });
   });
 
+  await t.test("normalizes PIN input to six ASCII digits", async () => {
+    await click(".filter-reset");
+
+    await setInput("#property-pin-code", "70a0156");
+    await waitForCount("2 sample listings found");
+
+    const normalizedPin = await evaluate(
+      'document.querySelector("#property-pin-code")?.value ?? null',
+    );
+
+    assert.equal(
+      normalizedPin,
+      "700156",
+      "PIN input should remove non-digits and limit the value to six digits.",
+    );
+  });
+
   await t.test("shows empty state and clears an unmatched PIN", async () => {
     await click(".filter-reset");
     await waitForCount("6 sample listings found");
