@@ -11,7 +11,7 @@ import {
 } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
@@ -55,6 +55,14 @@ COMMIT;
 `;
 
 const VALID_SQL = `BEGIN;
+CREATE TABLE public.integration_marker (
+  id INTEGER PRIMARY KEY
+);
+COMMIT;
+`;
+
+const SLOW_VALID_SQL = `BEGIN;
+SELECT pg_sleep(1);
 CREATE TABLE public.integration_marker (
   id INTEGER PRIMARY KEY
 );
@@ -209,6 +217,58 @@ function runMigration(fixture, databaseUrlValue) {
   };
 }
 
+function runMigrationAsync(fixture, databaseUrlValue) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      process.execPath,
+      [path.join(fixture, "scripts", "db-migrate.mjs"), "migrate"],
+      {
+        cwd: fixture,
+        env: {
+          ...process.env,
+          DATABASE_URL: databaseUrlValue,
+        },
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+
+    let stdout = "";
+    let stderr = "";
+    let timedOut = false;
+
+    const timeout = setTimeout(() => {
+      timedOut = true;
+      child.kill("SIGKILL");
+    }, 30000);
+
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+
+    child.stdout.on("data", (chunk) => {
+      stdout += chunk;
+    });
+
+    child.stderr.on("data", (chunk) => {
+      stderr += chunk;
+    });
+
+    child.once("error", (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+
+    child.once("close", (status, signal) => {
+      clearTimeout(timeout);
+
+      resolve({
+        status: timedOut ? null : status,
+        signal,
+        output: `${stdout}\n${stderr}`,
+      });
+    });
+  });
+}
+
 async function readPublicState(databaseUrlValue) {
   const client = await connectTo(databaseUrlValue);
 
@@ -274,6 +334,67 @@ test("failed migration rolls back schema and migration ledger", async () => {
       "A failed migration left a schema_migrations ledger behind",
     );
     assert.deepEqual(state.migrations, []);
+  });
+});
+
+test("concurrent migration runs apply a migration exactly once", async () => {
+  await withFixtureAndDatabase(SLOW_VALID_SQL, async ({ fixture, database }) => {
+    const [first, second] = await Promise.all([
+      runMigrationAsync(fixture, database.url),
+      runMigrationAsync(fixture, database.url),
+    ]);
+
+    assert.equal(first.status, 0, `First runner failed:\n${first.output}`);
+    assert.equal(second.status, 0, `Second runner failed:\n${second.output}`);
+
+    const results = [first, second];
+    const appliedMessages = results.filter((result) =>
+      /APPLIED\s+0001_integration_test\.sql/.test(result.output),
+    );
+
+    assert.equal(
+      appliedMessages.length,
+      1,
+      "Concurrent runners should apply the migration exactly once",
+    );
+
+    const state = await readPublicState(database.url);
+
+    assert.ok(state.tables.includes("integration_marker"));
+    assert.ok(state.ledgerExists);
+    assert.equal(state.migrations.length, 1);
+    assert.equal(
+      state.migrations[0].migration_id,
+      "0001_integration_test.sql",
+    );
+  });
+});
+
+test("repeated migration execution is idempotent", async () => {
+  await withFixtureAndDatabase(VALID_SQL, async ({ fixture, database }) => {
+    const first = runMigration(fixture, database.url);
+
+    assert.equal(first.status, 0, first.output);
+    assert.match(first.output, /APPLIED\s+0001_integration_test\.sql/);
+
+    const stateAfterFirstRun = await readPublicState(database.url);
+
+    const second = runMigration(fixture, database.url);
+
+    assert.equal(second.status, 0, second.output);
+    assert.doesNotMatch(
+      second.output,
+      /APPLIED\s+0001_integration_test\.sql/,
+      "A repeated run must not reapply the migration",
+    );
+
+    const stateAfterSecondRun = await readPublicState(database.url);
+
+    assert.deepEqual(
+      stateAfterSecondRun,
+      stateAfterFirstRun,
+      "Repeated execution changed the database schema or migration ledger",
+    );
   });
 });
 
