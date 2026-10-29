@@ -371,3 +371,16 @@ test("still applies valid filters when listing type is unsupported", () => {
   assert.equal(results.length, 2);
   assert.ok(results.every((property) => property.locality === "New Town"));
 });
+
+test("ignores an invalid BHK filter while applying a valid listing type", () => {
+  const results = filterProperties(mockProperties, {
+    ...allFilters,
+    listingType: "rent",
+    bhk: 99,
+  });
+
+  assert.equal(results.length, 3);
+  assert.ok(
+    results.every((property) => property.listingType === "rent"),
+  );
+});
