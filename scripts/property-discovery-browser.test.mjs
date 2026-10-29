@@ -330,6 +330,51 @@ test("property discovery works in a real Chromium browser", async (t) => {
     await waitForCount("6 sample listings found");
   });
 
+  await t.test("filters visible cards by BHK", async () => {
+    await click(".filter-reset");
+    await setSelect("#property-bhk", "2");
+    await waitForCount("2 sample listings found");
+
+    const cardDetails = await evaluate(`Array.from(
+      document.querySelectorAll(".property-card")
+    ).map((card) =>
+      card.querySelector(".property-details")?.textContent?.trim() ?? ""
+    )`);
+
+    assert.equal(cardDetails.length, 2);
+    assert.ok(
+      cardDetails.every((details) => details.startsWith("2 BHK")),
+      "Every visible card should match the selected 2-BHK filter.",
+    );
+  });
+
+  await t.test("combines rent and BHK filters", async () => {
+    await click(".filter-reset");
+    await setSelect("#listing-type", "rent");
+    await setSelect("#property-bhk", "2");
+    await waitForCount("2 sample listings found");
+
+    const visibleCards = await evaluate(`Array.from(
+      document.querySelectorAll(".property-card")
+    ).map((card) => ({
+      details: card.querySelector(".property-details")?.textContent?.trim() ?? "",
+      type: card.querySelector(".property-type")?.textContent?.trim() ?? "",
+    }))`);
+
+    assert.equal(visibleCards.length, 2);
+    assert.ok(
+      visibleCards.every(
+        (card) =>
+          card.details.startsWith("2 BHK") &&
+          card.type === "FOR RENT",
+      ),
+      "Every visible card should be a 2-BHK rental.",
+    );
+
+    await click(".filter-reset");
+    await waitForCount("6 sample listings found");
+  });
+
   await t.test("combines rent and maximum budget filters", async () => {
     await setSelect("#listing-type", "rent");
     await setInput("#property-budget", "20000");
