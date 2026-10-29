@@ -10,7 +10,9 @@
     "test": "node --experimental-strip-types --test src/lib/property-filters.test.mjs",
     "test:http": "node --test scripts/property-route-http.test.mjs",
     "test:ui-contracts": "node --test scripts/ui-contracts.test.mjs",
-    "test:browser": "node --test scripts/property-discovery-browser.test.mjs"
+    "test:browser": "node --test scripts/property-discovery-browser.test.mjs",
+    "db:migrate": "node scripts/db-migrate.mjs",
+    "test:db-migrations": "node --test scripts/db-migrations.test.mjs scripts/db-migration-contract.test.mjs"
   },
   "dependencies": {
     "next": "16.4.3",
