@@ -488,3 +488,125 @@ test("property discovery works in a real Chromium browser", async (t) => {
     await waitForCount("6 sample listings found");
   });
 });
+
+
+// Day 26: mobile navigation and responsive browser regression tests.
+
+async function setViewport(width, height = 844) {
+  await sendCommand("Emulation.setDeviceMetricsOverride", {
+    width,
+    height,
+    deviceScaleFactor: 1,
+    mobile: true,
+  });
+}
+
+async function waitForExpanded(expected) {
+  const deadline = Date.now() + 2000;
+  let actual = null;
+
+  while (Date.now() < deadline) {
+    actual = await evaluate(`document.querySelector(".menu-toggle")?.getAttribute("aria-expanded") ?? null`);
+    if (actual === expected) return actual;
+    await delay(50);
+  }
+
+  assert.equal(actual, expected, "Timed out waiting for mobile menu state.");
+  return actual;
+}
+
+test("mobile navigation and narrow viewports work in Chromium", async () => {
+  try {
+    await setViewport(390);
+
+    const initialState = await evaluate(`(() => {
+      const toggle = document.querySelector(".menu-toggle");
+      const nav = document.querySelector("#primary-navigation");
+
+      return {
+        toggleDisplay: toggle ? getComputedStyle(toggle).display : null,
+        expanded: toggle?.getAttribute("aria-expanded") ?? null,
+        navDisplay: nav ? getComputedStyle(nav).display : null,
+        viewportWidth: window.innerWidth,
+      };
+    })()`);
+
+    assert.equal(initialState.toggleDisplay, "flex");
+    assert.equal(initialState.expanded, "false");
+    assert.equal(initialState.navDisplay, "none");
+
+    await click(".menu-toggle");
+
+    await waitForExpanded("true");
+
+    const openedState = await evaluate(`(() => {
+      const toggle = document.querySelector(".menu-toggle");
+      const nav = document.querySelector("#primary-navigation");
+
+      return {
+        expanded: toggle?.getAttribute("aria-expanded") ?? null,
+        navDisplay: nav ? getComputedStyle(nav).display : null,
+      };
+    })()`);
+
+    assert.equal(openedState.expanded, "true");
+    assert.equal(openedState.navDisplay, "flex");
+
+    for (const width of [320, 360, 390, 430]) {
+      await setViewport(width);
+
+      const dimensions = await evaluate(`(() => ({
+        viewport: window.innerWidth,
+        document: document.documentElement.scrollWidth,
+        body: document.body.scrollWidth,
+      }))()`);
+
+      assert.ok(
+        dimensions.document <= dimensions.viewport,
+        `Horizontal document overflow at ${width}px: document=${dimensions.document}, viewport=${dimensions.viewport}`,
+      );
+
+      assert.ok(
+        dimensions.body <= dimensions.viewport,
+        `Horizontal body overflow at ${width}px: body=${dimensions.body}, viewport=${dimensions.viewport}`,
+      );
+    }
+
+    await setViewport(390);
+
+    await click('a[href="/#discover"]');
+
+    const navigationDeadline = Date.now() + 3000;
+    let closedState = null;
+
+    while (Date.now() < navigationDeadline) {
+      closedState = await evaluate(`(() => {
+        const toggle = document.querySelector(".menu-toggle");
+        const nav = document.querySelector("#primary-navigation");
+
+        return {
+          expanded: toggle?.getAttribute("aria-expanded") ?? null,
+          navDisplay: nav ? getComputedStyle(nav).display : null,
+          hash: window.location.hash,
+          pathname: window.location.pathname,
+        };
+      })()`);
+
+      if (
+        closedState.expanded === "false" &&
+        closedState.navDisplay === "none" &&
+        closedState.hash === "#discover"
+      ) {
+        break;
+      }
+
+      await delay(50);
+    }
+
+    assert.equal(closedState?.expanded, "false");
+    assert.equal(closedState?.navDisplay, "none");
+    assert.equal(closedState?.hash, "#discover");
+  } finally {
+    await sendCommand("Emulation.clearDeviceMetricsOverride").catch(() => {});
+  }
+});
