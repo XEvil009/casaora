@@ -20,10 +20,9 @@ change.
 
 ## Health check
 
-GET `/api/health` returns a small JSON response with status, service,
-and timestamp fields. It does not check a database or external
-dependencies and must not be interpreted as a full dependency-health
-check.
+GET `/api/health` checks PostgreSQL connectivity and returns a JSON response with service status, timestamp, and database readiness. It returns HTTP 200 when the database check succeeds and HTTP 503 when the database is unavailable or not configured. The response is non-cacheable and does not expose connection credentials or raw database errors.
+
+This endpoint verifies database connectivity only. It does not prove that all marketplace features, authentication, transactions, or payments are production-ready.
 
 ## Environment variables
 

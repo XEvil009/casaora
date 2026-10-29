@@ -26,9 +26,12 @@ test("CASAORA icon is a validly structured SVG source", async () => {
 test("health endpoint returns a non-cacheable status response", async () => {
   const source = await read("../src/app/api/health/route.ts");
 
-  assert.match(source, /export function GET/);
-  assert.match(source, /status:\s*"ok"/);
+  assert.match(source, /export async function GET/);
+  assert.match(source, /status:\s*databaseReady\s*\?\s*"ok"\s*:\s*"degraded"/);
   assert.match(source, /service:\s*"casaora"/);
+  assert.match(source, /checks:/);
+  assert.match(source, /databaseReady/);
+  assert.match(source, /unavailable/);
   assert.match(source, /toISOString\(\)/);
   assert.match(source, /Cache-Control/);
   assert.match(source, /no-store/);
@@ -39,7 +42,7 @@ test("deployment notes distinguish the preview from production workflows", async
 
   assert.match(source, /sample property data/i);
   assert.match(source, /Never commit/i);
-  assert.match(source, /does not check a database/i);
+  assert.match(source, /checks PostgreSQL connectivity/i);
   assert.match(source, /HTTPS/i);
 });
 

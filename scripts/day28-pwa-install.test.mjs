@@ -164,9 +164,12 @@ test("icon generator uses Node built-ins without sharp", async () => {
 test("health endpoint retains no-store response behavior", async () => {
   const source = await read("../src/app/api/health/route.ts");
 
-  assert.match(source, /export function GET/);
-  assert.match(source, /status:\s*"ok"/);
+  assert.match(source, /export async function GET/);
+  assert.match(source, /status:\s*databaseReady\s*\?\s*"ok"\s*:\s*"degraded"/);
   assert.match(source, /service:\s*"casaora"/);
+  assert.match(source, /checks:/);
+  assert.match(source, /databaseReady/);
+  assert.match(source, /unavailable/);
   assert.match(source, /Cache-Control/);
   assert.match(source, /no-store/);
 });
