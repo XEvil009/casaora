@@ -14,7 +14,8 @@
     "db:migrate": "node scripts/db-migrate.mjs",
     "test:db-migrations": "node --test scripts/db-migrations.test.mjs scripts/db-migration-contract.test.mjs scripts/db-migration-errors.test.mjs scripts/db-migration-database-creation.test.mjs scripts/db-migration-fixture-cleanup.test.mjs",
     "test:db-migrations:integration": "node --test scripts/db-migrations.integration.test.mjs",
-    "test:regression": "npm test && npm run test:db-migrations && npm run test:db-migrations:integration && npm run test:http && npm run test:ui-contracts && npm run test:browser"
+    "test:db-schema:integration": "node --test scripts/db-schema.integration.test.mjs",
+    "test:regression": "npm test && npm run test:db-migrations && npm run test:db-migrations:integration && npm run test:db-schema:integration && npm run test:http && npm run test:ui-contracts && npm run test:browser"
   },
   "dependencies": {
     "next": "16.4.3",
