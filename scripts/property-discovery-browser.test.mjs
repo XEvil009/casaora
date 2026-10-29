@@ -336,6 +336,25 @@ test("property discovery works in a real Chromium browser", async (t) => {
     await waitForCount("1 sample listing found");
   });
 
+  await t.test("clears a previously valid budget when the new budget is invalid", async () => {
+    await click(".filter-reset");
+    await setSelect("#listing-type", "rent");
+    await setInput("#property-budget", "20000");
+    await waitForCount("1 sample listing found");
+
+    await setInput("#property-budget", "0");
+    await waitForCount("3 sample listings found");
+
+    const invalidBudget = await evaluate(
+      `document.querySelector("#property-budget")?.getAttribute("aria-invalid") === "true"`,
+    );
+    assert.equal(
+      invalidBudget,
+      true,
+      "Invalid budget should be exposed to assistive technology.",
+    );
+  });
+
   await t.test("shows empty state and clears an unmatched PIN", async () => {
     await click(".filter-reset");
     await waitForCount("6 sample listings found");
