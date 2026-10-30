@@ -5,6 +5,10 @@ import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import pg from "pg";
+import { spawn } from "node:child_process";
+import { once } from "node:events";
+import { createServer } from "node:net";
+import { setTimeout as delay } from "node:timers/promises";
 
 import {
   buildPropertySearchQuery,
@@ -228,6 +232,110 @@ async function executePropertySearch(client, queryString = "") {
   return client.query(query.text, query.values);
 }
 
+async function findAvailablePort() {
+  const server = createServer();
+  server.listen(0, "127.0.0.1");
+  await once(server, "listening");
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  const port = address.port;
+  await new Promise((resolve, reject) => {
+    server.close((error) => error ? reject(error) : resolve());
+  });
+  return port;
+}
+
+async function stopProductionServer(child) {
+  if (
+    !child ||
+    child.exitCode !== null ||
+    child.signalCode !== null
+  ) {
+    return;
+  }
+
+  const exitedGracefully = new Promise((resolve) => {
+    const timer = setTimeout(() => {
+      child.off("exit", onExit);
+      resolve(false);
+    }, 5000);
+
+    function onExit() {
+      clearTimeout(timer);
+      resolve(true);
+    }
+
+    child.once("exit", onExit);
+  });
+
+  child.kill("SIGTERM");
+
+  const exited = await exitedGracefully;
+
+  if (
+    !exited &&
+    child.exitCode === null &&
+    child.signalCode === null
+  ) {
+    const forcedExit = once(child, "exit");
+    child.kill("SIGKILL");
+    await forcedExit;
+  }
+}
+
+async function startProductionServer(databaseUrl) {
+  const port = await findAvailablePort();
+  const baseUrl = `http://127.0.0.1:${port}`;
+  let output = "";
+  const child = spawn(
+    process.execPath,
+    [
+      "node_modules/next/dist/bin/next",
+      "start",
+      "--hostname", "127.0.0.1",
+      "--port", String(port),
+    ],
+    {
+      cwd: ROOT,
+      env: {
+        ...process.env,
+        NODE_ENV: "production",
+        DATABASE_URL: databaseUrl,
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  child.stdout.on("data", (chunk) => { output += chunk; });
+  child.stderr.on("data", (chunk) => { output += chunk; });
+
+  const deadline = Date.now() + 30000;
+  let lastError;
+  try {
+    while (Date.now() < deadline) {
+      if (child.exitCode !== null) {
+        throw new Error(`Production server exited early.\n${output}`);
+      }
+      try {
+        const response = await fetch(`${baseUrl}/`, {
+          signal: AbortSignal.timeout(2000),
+        });
+        await response.arrayBuffer();
+        if (response.status === 200) return { child, baseUrl };
+        lastError = new Error(`Homepage returned HTTP ${response.status}`);
+      } catch (error) {
+        lastError = error;
+      }
+      await delay(250);
+    }
+    throw new Error(`Production server startup timed out: ${lastError}\n${output}`);
+  } catch (error) {
+    await stopProductionServer(child);
+    throw error;
+  }
+}
+
 test(
   "actual property-search query returns correct PostgreSQL results",
   { timeout: 60000 },
@@ -241,6 +349,7 @@ test(
 
     let database;
     let client;
+    let server;
     let operationError;
 
     try {
@@ -368,6 +477,75 @@ test(
 
         listingIds.set(fixture.title, id);
       }
+
+      // Exercise the real Next.js API against this disposable database.
+      server = await startProductionServer(database.url);
+
+      const healthResponse = await fetch(`${server.baseUrl}/api/health`);
+      assert.equal(healthResponse.status, 200);
+      const healthBody = await healthResponse.json();
+      assert.equal(healthBody.status, "ok");
+      assert.equal(healthBody.service, "casaora");
+      assert.equal(typeof healthBody.timestamp, "string");
+      assert.ok(Number.isFinite(Date.parse(healthBody.timestamp)));
+      assert.deepEqual(healthBody.checks, { database: "ok" });
+
+      const apiResponse = await fetch(`${server.baseUrl}/api/properties`);
+      assert.equal(apiResponse.status, 200);
+      assert.match(apiResponse.headers.get("cache-control") ?? "", /no-store/i);
+      const apiBody = await apiResponse.json();
+      assert.deepEqual(
+        apiBody.data.map((row) => row.title),
+        [
+          "Salt Lake Sale Published",
+          "Salt Lake Rent Published",
+          "New Town Rent Published",
+        ],
+      );
+      assert.deepEqual(apiBody.pagination, {
+        limit: 20,
+        offset: 0,
+        returned: 3,
+      });
+
+      const saleResponse = await fetch(
+        `${server.baseUrl}/api/properties?listingType=sale`,
+      );
+      assert.equal(saleResponse.status, 200);
+      const saleBody = await saleResponse.json();
+      assert.deepEqual(
+        saleBody.data.map((row) => row.title),
+        ["Salt Lake Sale Published"],
+      );
+
+      const localityResponse = await fetch(
+        `${server.baseUrl}/api/properties?locality=New%20Town`,
+      );
+      assert.equal(localityResponse.status, 200);
+      const localityBody = await localityResponse.json();
+      assert.deepEqual(
+        localityBody.data.map((row) => row.title),
+        ["New Town Rent Published"],
+      );
+
+      const pageResponse = await fetch(
+        `${server.baseUrl}/api/properties?limit=1&offset=1`,
+      );
+      assert.equal(pageResponse.status, 200);
+      const pageBody = await pageResponse.json();
+      assert.deepEqual(
+        pageBody.data.map((row) => row.title),
+        ["Salt Lake Rent Published"],
+      );
+      assert.deepEqual(pageBody.pagination, {
+        limit: 1,
+        offset: 1,
+        returned: 1,
+      });
+
+      console.log("PASS: production health endpoint confirms PostgreSQL readiness.");
+      console.log("PASS: property-search HTTP endpoint returns published PostgreSQL fixtures.");
+      console.log("PASS: property-search HTTP filters and pagination work.");
 
       // 1. Only published listings are visible.
       const defaultSearch = await executePropertySearch(client);
@@ -541,6 +719,16 @@ test(
       );
     } catch (error) {
       operationError = error;
+    }
+
+    if (server) {
+      try {
+        await stopProductionServer(server.child);
+      } catch (error) {
+        operationError = operationError
+          ? new AggregateError([operationError, error], "Test and HTTP server shutdown failed.")
+          : error;
+      }
     }
 
     if (client) {
