@@ -15,9 +15,10 @@
     "test:db-migrations": "node --test scripts/db-migrations.test.mjs scripts/db-migration-contract.test.mjs scripts/db-migration-errors.test.mjs scripts/db-migration-database-creation.test.mjs scripts/db-migration-fixture-cleanup.test.mjs",
     "test:db-migrations:integration": "node --test scripts/db-migrations.integration.test.mjs",
     "test:db-schema:integration": "node --test scripts/db-schema.integration.test.mjs",
-    "test:regression": "npm test && npm run test:db-migrations && npm run test:db-migrations:integration && npm run test:db-schema:integration && npm run test:http && npm run test:ui-contracts && npm run test:browser && npm run test:pwa && npm run test:pwa-install",
+    "test:regression": "npm test && npm run test:db-migrations && npm run test:db-migrations:integration && npm run test:db-schema:integration && npm run test:property-search:integration && npm run test:http && npm run test:ui-contracts && npm run test:browser && npm run test:pwa && npm run test:pwa-install",
     "test:pwa": "node --test scripts/day27-pwa.test.mjs",
-    "test:pwa-install": "node --test scripts/day28-pwa-install.test.mjs"
+    "test:pwa-install": "node --test scripts/day28-pwa-install.test.mjs",
+    "test:property-search:integration": "node --experimental-strip-types --test scripts/property-search.database.integration.test.mjs"
   },
   "dependencies": {
     "next": "16.4.3",
